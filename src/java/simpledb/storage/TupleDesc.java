@@ -79,6 +79,10 @@ public class TupleDesc implements Serializable {
     public TupleDesc(Type[] typeAr) {
         // some code goes here
         this.typeAr = typeAr;
+        fieldAr = new String[typeAr.length];
+//        for (int i = 0; i < typeAr.length; i++) {
+//            fieldAr[i] = i + "";
+//        }
     }
 
     /**
@@ -86,7 +90,7 @@ public class TupleDesc implements Serializable {
      */
     public int numFields() {
         // some code goes here
-        return fieldAr.length;
+        return fieldAr == null ? 0 : fieldAr.length;
     }
 
     /**
@@ -129,8 +133,9 @@ public class TupleDesc implements Serializable {
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
         // some code goes here
+        if (name == null) throw new NoSuchElementException();
         for (int i = 0; i < this.fieldAr.length; i++) {
-            if (this.fieldAr[i].equals(name)) {
+            if (name.equals(this.fieldAr[i])) {
                 return i;
             }
         }

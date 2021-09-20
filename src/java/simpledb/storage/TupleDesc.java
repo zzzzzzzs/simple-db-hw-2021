@@ -79,10 +79,7 @@ public class TupleDesc implements Serializable {
     public TupleDesc(Type[] typeAr) {
         // some code goes here
         this.typeAr = typeAr;
-        fieldAr = new String[typeAr.length];
-//        for (int i = 0; i < typeAr.length; i++) {
-//            fieldAr[i] = i + "";
-//        }
+        this.fieldAr = new String[typeAr.length];
     }
 
     /**

@@ -1,16 +1,20 @@
 package simpledb.common;
 
+import javafx.scene.control.Tab;
 import simpledb.common.Type;
 import simpledb.storage.DbFile;
 import simpledb.storage.HeapFile;
+import simpledb.storage.Tuple;
 import simpledb.storage.TupleDesc;
 
+import javax.swing.plaf.basic.BasicDesktopIconUI;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 /**
  * The Catalog keeps track of all available tables in the database and their
@@ -18,11 +22,50 @@ import java.util.concurrent.ConcurrentHashMap;
  * For now, this is a stub catalog that must be populated with tables by a
  * user program before it can be used -- eventually, this should be converted
  * to a catalog that reads a catalog table from disk.
- * 
+ *
  * @Threadsafe
  */
 public class Catalog {
 
+    /*
+     * 自己定义一个Table类
+     **/
+    class Table {
+        public DbFile _dbFile;
+        public String _name;
+        public String _pkeyField;
+
+        public Table(DbFile dbFile, String name, String pkeyField) {
+            _dbFile = dbFile;
+            _name = name;
+            _pkeyField = pkeyField;
+        }
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Table table = (Table) o;
+            return Objects.equals(_dbFile, table._dbFile) &&
+                    Objects.equals(_name, table._name) &&
+                    Objects.equals(_pkeyField, table._pkeyField);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_dbFile, _name, _pkeyField);
+        }
+
+        @Override
+        public String toString() {
+            return "Table{" +
+                    "_dbFile=" + _dbFile +
+                    ", _name='" + _name + '\'' +
+                    ", _pkeyField='" + _pkeyField + '\'' +
+                    '}';
+        }
+    }
+    // 1:table
+    Map<Integer, Table> tableMap =  new HashMap<>();
     /**
      * Constructor.
      * Creates a new, empty catalog.
@@ -42,6 +85,8 @@ public class Catalog {
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
+        Table table = new Table(file, name, pkeyField);
+        tableMap.put(file.getId(), table);
     }
 
     public void addTable(DbFile file, String name) {
@@ -64,8 +109,15 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public int getTableId(String name) throws NoSuchElementException {
+        if(name == null) throw new NoSuchElementException();
         // some code goes here
-        return 0;
+        Collection<Table> values = tableMap.values();
+        for (Table value : values) {
+            if (name.equals(value._name)){
+                return value._dbFile.getId();
+            }
+        }
+        throw new NoSuchElementException();
     }
 
     /**
@@ -76,7 +128,7 @@ public class Catalog {
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        return tableMap.get(tableid)._dbFile.getTupleDesc();
     }
 
     /**
@@ -87,7 +139,7 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        return tableMap.get(tableid)._dbFile;
     }
 
     public String getPrimaryKey(int tableid) {
@@ -102,24 +154,24 @@ public class Catalog {
 
     public String getTableName(int id) {
         // some code goes here
-        return null;
+        return tableMap.get(id)._name;
     }
-    
+
     /** Delete all tables from the catalog */
     public void clear() {
         // some code goes here
     }
-    
+
     /**
      * Reads the schema from a file and creates the appropriate tables in the database.
      * @param catalogFile
      */
     public void loadSchema(String catalogFile) {
         String line = "";
-        String baseFolder=new File(new File(catalogFile).getAbsolutePath()).getParent();
+        String baseFolder = new File(new File(catalogFile).getAbsolutePath()).getParent();
         try {
             BufferedReader br = new BufferedReader(new FileReader(catalogFile));
-            
+
             while ((line = br.readLine()) != null) {
                 //assume line is of the format name (field type, field type, ...)
                 String name = line.substring(0, line.indexOf("(")).trim();
@@ -152,15 +204,15 @@ public class Catalog {
                 Type[] typeAr = types.toArray(new Type[0]);
                 String[] namesAr = names.toArray(new String[0]);
                 TupleDesc t = new TupleDesc(typeAr, namesAr);
-                HeapFile tabHf = new HeapFile(new File(baseFolder+"/"+name + ".dat"), t);
-                addTable(tabHf,name,primaryKey);
+                HeapFile tabHf = new HeapFile(new File(baseFolder + "/" + name + ".dat"), t);
+                addTable(tabHf, name, primaryKey);
                 System.out.println("Added table : " + name + " with schema " + t);
             }
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(0);
         } catch (IndexOutOfBoundsException e) {
-            System.out.println ("Invalid catalog entry : " + line);
+            System.out.println("Invalid catalog entry : " + line);
             System.exit(0);
         }
     }

@@ -39,14 +39,14 @@ public class TupleDescTest extends SimpleDbTestBase {
         for (int i = 0; i < 3; ++i)
             assertEquals(Type.INT_TYPE, td3.getFieldType(i));
         assertTrue(combinedStringArrays(td2, td1, td3));
-//
-//        // test td2.combine(td2)
-//        td3 = TupleDesc.merge(td2, td2);
-//        assertEquals(4 , td3.numFields());
-//        assertEquals(4 * Type.INT_TYPE.getLen(), td3.getSize());
-//        for (int i = 0; i < 4; ++i)
-//            assertEquals(Type.INT_TYPE, td3.getFieldType(i));
-//        assertTrue(combinedStringArrays(td2, td2, td3));
+
+        // test td2.combine(td2)
+        td3 = TupleDesc.merge(td2, td2);
+        assertEquals(4 , td3.numFields());
+        assertEquals(4 * Type.INT_TYPE.getLen(), td3.getSize());
+        for (int i = 0; i < 4; ++i)
+            assertEquals(Type.INT_TYPE, td3.getFieldType(i));
+        assertTrue(combinedStringArrays(td2, td2, td3));
     }
 
     /**

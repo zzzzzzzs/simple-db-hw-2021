@@ -1,20 +1,16 @@
 package simpledb.common;
 
-import javafx.scene.control.Tab;
-import simpledb.common.Type;
 import simpledb.storage.DbFile;
 import simpledb.storage.HeapFile;
-import simpledb.storage.Tuple;
 import simpledb.storage.TupleDesc;
 
-import javax.swing.plaf.basic.BasicDesktopIconUI;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 /**
  * The Catalog keeps track of all available tables in the database and their
@@ -40,6 +36,7 @@ public class Catalog {
             _name = name;
             _pkeyField = pkeyField;
         }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -64,8 +61,10 @@ public class Catalog {
                     '}';
         }
     }
+
     // 1:table
-    Map<Integer, Table> tableMap =  new HashMap<>();
+    Map<Integer, Table> tableMap = new HashMap<>();
+
     /**
      * Constructor.
      * Creates a new, empty catalog.
@@ -81,11 +80,18 @@ public class Catalog {
      *    this file/tupledesc param for the calls getTupleDesc and getFile
      * @param name the name of the table -- may be an empty string.  May not be null.  If a name
      * conflict exists, use the last table to be added as the table for a given name.
+     *             如果有相同的name，请保存最后一个
      * @param pkeyField the name of the primary key field
      */
     public void addTable(DbFile file, String name, String pkeyField) {
         // some code goes here
         Table table = new Table(file, name, pkeyField);
+        if (tableMap.size() == 0) {
+            tableMap.put(file.getId(), table);
+            return;
+        }
+        // TODO 这里可以优化，速度太慢了
+        tableMap.entrySet().removeIf(val -> name.equals(val.getValue()._name));
         tableMap.put(file.getId(), table);
     }
 
@@ -109,11 +115,11 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public int getTableId(String name) throws NoSuchElementException {
-        if(name == null) throw new NoSuchElementException();
+        if (name == null) throw new NoSuchElementException();
         // some code goes here
         Collection<Table> values = tableMap.values();
         for (Table value : values) {
-            if (name.equals(value._name)){
+            if (name.equals(value._name)) {
                 return value._dbFile.getId();
             }
         }
